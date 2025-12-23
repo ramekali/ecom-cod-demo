@@ -1,0 +1,10 @@
+const express = require('express')
+const router = express.Router()
+const db = require('../db')
+const { v4: uuidv4 } = require('uuid')
+const { ensureAdmin } = require('../middleware/auth')
+router.get('/products', ensureAdmin, (req,res)=>{ const rows = db.prepare('SELECT id,title,price,inventory,created_at FROM products').all(); res.json({ products: rows }) })
+router.post('/products', ensureAdmin, (req,res)=>{ const { title, price, inventory=0, description='', image='' } = req.body; if(!title||typeof price==='undefined') return res.status(400).json({ error: 'Missing' }); const id = uuidv4(); db.prepare('INSERT INTO products (id,title,description,price,inventory,image) VALUES (?,?,?,?,?,?)').run(id,title,description,price,inventory,image); const p = db.prepare('SELECT id,title,description,price,inventory,image FROM products WHERE id = ?').get(id); res.status(201).json({ product: p }) })
+router.get('/orders', ensureAdmin, (req,res)=>{ const rows = db.prepare('SELECT id,user_id,status,total,currency,created_at FROM orders ORDER BY created_at DESC').all(); res.json({ orders: rows }) })
+router.put('/orders/:id/status', ensureAdmin, (req,res)=>{ const { status } = req.body; const allowed = ['pending','processing','shipped','delivered','cancelled']; if(!allowed.includes(status)) return res.status(400).json({ error: 'Invalid' }); db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, req.params.id); const order = db.prepare('SELECT id,user_id,status,total,currency,created_at FROM orders WHERE id = ?').get(req.params.id); res.json({ order }) })
+module.exports = router

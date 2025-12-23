@@ -1,0 +1,3 @@
+import React, { useEffect, useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+export default function Cart(){ const [cart,setCart]=useState([]); const navigate=useNavigate(); useEffect(()=> setCart(JSON.parse(localStorage.getItem('cart')||'[]')),[]) if(!cart.length) return <div>No items in cart. <Link to="/">Browse</Link></div>; const total = cart.reduce((s,it)=>s+(it.price*(it.qty||1)),0); return (<div><h1>Your Cart</h1><ul>{cart.map((it,i)=><li key={i}>{it.title} - ${it.price}</li>)}</ul><div>Total: ${total.toFixed(2)}</div><button onClick={()=>navigate('/checkout')}>Proceed to Checkout</button></div>)}

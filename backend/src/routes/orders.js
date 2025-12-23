@@ -1,0 +1,9 @@
+const express = require('express')
+const router = express.Router()
+const db = require('../db')
+const { v4: uuidv4 } = require('uuid')
+const { ensureAuthenticated } = require('../middleware/auth')
+router.post('/', ensureAuthenticated, (req,res)=>{ const { shipping={}, payment={}, items=[] } = req.body; if(!items.length) return res.status(400).json({ error: 'No items' }); let total = 0; items.forEach(it=> total += (it.price||0)*(it.quantity||1)); const id = uuidv4(); db.prepare('INSERT INTO orders (id,user_id,status,total,currency,shipping_address,shipping_phone,payment_method) VALUES (?,?,?,?,?,?,?,?)').run(id, req.session.user.id, 'pending', total, 'USD', shipping.address||'', shipping.phone||'', payment.method||'COD'); const insertItem = db.prepare('INSERT INTO order_items (id,order_id,product_id,title,price,quantity) VALUES (?,?,?,?,?,?)'); for(const it of items){ insertItem.run(uuidv4(), id, it.id, it.title||'Item', it.price||0, it.quantity||1) } const order = db.prepare('SELECT id,status,total,currency,created_at FROM orders WHERE id = ?').get(id); res.status(201).json({ order }) })
+router.get('/', ensureAuthenticated, (req,res)=>{ const rows = db.prepare('SELECT id,status,total,currency,created_at FROM orders WHERE user_id = ?').all(req.session.user.id); res.json({ orders: rows }) })
+router.get('/:id', ensureAuthenticated, (req,res)=>{ const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id); if(!order) return res.status(404).json({ error: 'Not found' }); if(order.user_id !== req.session.user.id){ const roles = (req.session.user.roles||'').split(',').map(r=>r.trim()); if(!roles.includes('admin')) return res.status(403).json({ error: 'Forbidden' }) } const items = db.prepare('SELECT product_id,title,price,quantity FROM order_items WHERE order_id = ?').all(req.params.id); res.json({ order: {...order, items} }) })
+module.exports = router

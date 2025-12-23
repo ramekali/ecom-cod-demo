@@ -1,0 +1,4 @@
+import React, { useState } from 'react'
+import api from '../services/api'
+import { useNavigate } from 'react-router-dom'
+export default function Checkout(){ const [address,setAddress]=useState(''); const [phone,setPhone]=useState(''); const navigate=useNavigate(); async function handleSubmit(e){ e.preventDefault(); const cart = JSON.parse(localStorage.getItem('cart')||'[]'); try{ const { data } = await api.post('/orders', { shipping:{address,phone}, payment:{method:'COD'}, items: cart }); localStorage.removeItem('cart'); navigate(`/order-complete/${data.order.id}`) }catch(e){ console.error(e); alert('Failed to create order') } } return (<form onSubmit={handleSubmit}><h2>Checkout (COD)</h2><label>Address<textarea value={address} onChange={e=>setAddress(e.target.value)} required /></label><label>Phone<input value={phone} onChange={e=>setPhone(e.target.value)} required /></label><button type="submit">Place order (COD)</button></form>)}

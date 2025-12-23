@@ -1,0 +1,3 @@
+/* Minimal styles - replace with Tailwind or your chosen CSS framework */
+body { margin: 0; font-family: system-ui, Arial, sans-serif; background: #f7fafc; color: #111827; }
+.container { max-width: 1024px; margin: 0 auto; padding: 1rem; }
